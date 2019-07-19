@@ -1,0 +1,31 @@
+version: 2.0
+
+jobs:
+  # Base test configuration for Go library tests Each distinct version should
+  # inherit this base, and override (at least) the container image used.
+  "test": &test
+    docker:
+      - image: circleci/golang:latest
+    working_directory: /go/src/github.com/hasangenc0/microfrontends
+    steps: &steps
+      # Our build steps: we checkout the repo, fetch our deps, lint, and finally
+      # run "go test" on the package.
+      - checkout
+      # Logs the version in our build logs, for posterity
+      - run: go version
+      - run:
+          name: "Fetch dependencies"
+          command: >
+            go get -t -v ./...
+      - run: go test -v -race ./...
+
+  "1.12":
+    <<: *test
+    docker:
+      - image: circleci/golang:1.12
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - "1.12"
