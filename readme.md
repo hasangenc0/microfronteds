@@ -1,4 +1,4 @@
-# Microfronteds
+# Microfrontends
 
 This project is under development
 ```
