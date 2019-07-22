@@ -9,10 +9,11 @@ import (
 func TestCollect(t *testing.T) {
 	// Only pass t into top-level Convey calls
 	Convey("Collect should return 61", t, func() {
-		services := []Service{
+		services := []Gateway{
 			{
-				host: "asdasd",
-				port: "4460",
+				Name: "Gateway",
+				Host: "localhost",
+				Port: "4461",
 			},
 		}
 

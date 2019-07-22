@@ -1,7 +1,7 @@
 package collector
 
 // Collect collects endpoints
-func Collect(services []Service) int {
+func Collect(services []Gateway) int {
 
 	return 61
 }

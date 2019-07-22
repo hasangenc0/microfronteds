@@ -12,15 +12,21 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	gateways := []microfrontends.Gateway{
 		{
 			Name: "header",
-			Content: "<div><h1>Header</h1></div>",
-		},
-		{
-			Name: "content",
-			Content: "<div><h1>Content</h1></div>",
+			Host: "http://localhost",
+			Port: "4462",
+			Method: "GET",
 		},
 		{
 			Name: "footer",
-			Content: "<div><h1>Footer</h1></div>",
+			Host: "http://localhost",
+			Port: "4463",
+			Method: "GET",
+		},
+		{
+			Name: "content",
+			Host: "http://localhost",
+			Port: "4461",
+			Method: "GET",
 		},
 	}
 
@@ -51,7 +57,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	port := ":4446"
+	port := ":4460"
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", handler)

@@ -1,14 +1,12 @@
 package collector
 
-// Service is the model for microservice endpoints
-type Service struct {
-	host string
-	port string
-}
+type HTTPMethod string
 
 type Gateway struct {
 	Name string
-	Content string
+	Host string
+	Port string
+	Method string
 }
 
 type Page struct {

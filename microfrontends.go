@@ -1,9 +1,11 @@
 package microfrontends
 
 import (
+	"fmt"
 	"github.com/hasangenc0/microfrontends/pkg/client"
 	"github.com/hasangenc0/microfrontends/pkg/collector"
 	"html/template"
+	"io/ioutil"
 	"net/http"
 	"runtime"
 	"sync"
@@ -12,6 +14,38 @@ import (
 type Gateway = collector.Gateway
 type Page = collector.Page
 type App = collector.App
+
+const (
+	MethodGet     = "GET"
+	MethodHead    = "HEAD"
+	MethodPost    = "POST"
+	MethodPut     = "PUT"
+	MethodPatch   = "PATCH"
+	MethodDelete  = "DELETE"
+	MethodConnect = "CONNECT"
+	MethodOptions = "OPTIONS"
+	MethodTrace   = "TRACE"
+)
+
+func getMethod(method string) string {
+	switch method {
+	case MethodGet: return MethodGet
+	case MethodHead: return MethodHead
+	case MethodPost: return MethodPost
+	case MethodPut: return MethodPut
+	case MethodPatch: return MethodPatch
+	case MethodDelete: return MethodDelete
+	case MethodConnect: return MethodConnect
+	case MethodOptions: return MethodOptions
+	case MethodTrace: return MethodTrace
+	default:
+		panic(method + " is not a type of http method.")
+	}
+}
+
+func getUrl(host string, port string) string {
+	return host + ":" + port
+}
 
 func setHeaders(w http.ResponseWriter) {
 	w.Header().Set("Transfer-Encoding", "chunked")
@@ -47,21 +81,27 @@ func sendChunk(w http.ResponseWriter, gateway Gateway, wg *sync.WaitGroup, ch ch
 		panic("expected http.ResponseWriter to be an http.Flusher")
 	}
 
-	chunk := client.GetView(gateway.Name, gateway.Content)
-
-	tmpl, err := template.New(gateway.Name).Parse(chunk)
-
-	if err != nil {
-		panic("An Error occured when parsing html")
-	}
-
-	err = tmpl.Execute(w, "")
-
+	_client := &http.Client{}
+	req, err := http.NewRequest(getMethod(gateway.Method), getUrl(gateway.Host, gateway.Port), nil)
 	if err != nil {
 		panic(err)
 	}
+	resp, err := _client.Do(req)
+	defer resp.Body.Close()
 
-	//flusher.Flush()
+	if resp.StatusCode == http.StatusOK {
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			panic(err)
+		}
+
+		bodyString := string(bodyBytes)
+
+		chunk := client.GetView(gateway.Name, bodyString)
+
+		fmt.Fprintf(w, chunk)
+	}
+
 	ch <- flusher
 	wg.Done()
 }
