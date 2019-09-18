@@ -3,7 +3,7 @@ package microfrontends
 import (
 	"fmt"
 	"github.com/hasangenc0/microfrontends/pkg/client"
-	"github.com/hasangenc0/microfrontends/pkg/collector"
+	"github.com/hasangenc0/microfrontends/pkg/types"
 	"html/template"
 	"io/ioutil"
 	"net/http"
@@ -11,9 +11,14 @@ import (
 	"sync"
 )
 
-type Gateway = collector.Gateway
-type Page = collector.Page
-type App = collector.App
+type Gateway = types.Gateway
+type Page = types.Page
+
+type App struct {
+	Gateway []Gateway
+	Page Page
+	Response http.ResponseWriter
+}
 
 const (
 	MethodGet     = "GET"
@@ -47,26 +52,26 @@ func getUrl(host string, port string) string {
 	return host + ":" + port
 }
 
-func setHeaders(w http.ResponseWriter) {
-	w.Header().Set("Transfer-Encoding", "chunked")
+func (app App) setHeaders() {
+	app.Response.Header().Set("Transfer-Encoding", "chunked")
 	//w.Header().Set("X-Content-Type-Options", "nosniff")
 }
 
-func initialize(w http.ResponseWriter, page Page) {
-	flusher, ok := w.(http.Flusher)
+func (app App) initialize() {
+	flusher, ok := app.Response.(http.Flusher)
 
 	if !ok {
 		panic("expected http.ResponseWriter to be an http.Flusher")
 	}
 
-	tmpl, err := template.New(page.Name).Parse(page.Content)
+	tmpl, err := template.New(app.Page.Name).Parse(app.Page.Content)
 
 	if err != nil {
 		panic("An Error occured when parsing html")
 		return
 	}
 
-	err = tmpl.Execute(w, "")
+	err = tmpl.Execute(app.Response, "")
 
 	if err != nil {
 		panic("Error in Template.Execute")
@@ -75,8 +80,8 @@ func initialize(w http.ResponseWriter, page Page) {
 	flusher.Flush()
 }
 
-func sendChunk(w http.ResponseWriter, gateway Gateway, wg *sync.WaitGroup, ch chan http.Flusher) {
-	var flusher, ok = w.(http.Flusher)
+func (app App) sendChunk(gateway Gateway, wg *sync.WaitGroup, ch chan http.Flusher) {
+	var flusher, ok = app.Response.(http.Flusher)
 	if !ok {
 		panic("expected http.ResponseWriter to be an http.Flusher")
 	}
@@ -87,6 +92,11 @@ func sendChunk(w http.ResponseWriter, gateway Gateway, wg *sync.WaitGroup, ch ch
 		panic(err)
 	}
 	resp, err := _client.Do(req)
+	if err != nil {
+		ch <- nil
+		wg.Done()
+		return
+	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK {
@@ -99,21 +109,21 @@ func sendChunk(w http.ResponseWriter, gateway Gateway, wg *sync.WaitGroup, ch ch
 
 		chunk := client.GetView(gateway.Name, bodyString)
 
-		fmt.Fprintf(w, chunk)
+		fmt.Fprintf(app.Response, chunk)
 	}
 
 	ch <- flusher
 	wg.Done()
 }
 
-func finish(w http.ResponseWriter) {
-	flusher, ok := w.(http.Flusher)
+func (app App) finish() {
+	flusher, ok := app.Response.(http.Flusher)
 
 	if !ok {
 		panic("expected http.ResponseWriter to be an http.Flusher")
 	}
 
-	_, err := w.Write([]byte(""))
+	_, err := app.Response.Write([]byte(""))
 
 	if err != nil {
 		panic("expected http.ResponseWriter to be an http.Flusher")
@@ -124,12 +134,12 @@ func finish(w http.ResponseWriter) {
 
 }
 
-func Make(w http.ResponseWriter, app App) {
-	setHeaders(w)
+func (app App) Init() {
+	app.setHeaders()
 
 	var wg sync.WaitGroup
 
-	initialize(w, app.Page)
+	app.initialize()
 
 	runtime.GOMAXPROCS(4)
 
@@ -137,7 +147,7 @@ func Make(w http.ResponseWriter, app App) {
 
 	for _, gateway := range app.Gateway {
 		wg.Add(1)
-		go sendChunk(w, gateway, &wg, flusher)
+		go app.sendChunk(gateway, &wg, flusher)
 	}
 
 	for range app.Gateway {
@@ -145,10 +155,12 @@ func Make(w http.ResponseWriter, app App) {
 		if !ok {
 			panic("expected http.ResponseWriter to be an http.Flusher")
 		}
-		flusher.Flush()
+		if flusher != nil {
+			flusher.Flush()
+		}
 	}
 
 	wg.Wait()
 
-	finish(w)
+	app.finish()
 }

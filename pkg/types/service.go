@@ -1,6 +1,4 @@
-package collector
-
-import "net/http"
+package types
 
 type HTTPMethod string
 
