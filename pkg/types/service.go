@@ -1,5 +1,7 @@
 package collector
 
+import "net/http"
+
 type HTTPMethod string
 
 type Gateway struct {
@@ -12,9 +14,4 @@ type Gateway struct {
 type Page struct {
 	Content string
 	Name string
-}
-
-type App struct {
-	Gateway []Gateway
-	Page Page
 }
