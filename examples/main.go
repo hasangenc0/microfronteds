@@ -51,9 +51,10 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	app := microfrontends.App{
 		gateways,
 		page,
+		w,
 	}
 
-	microfrontends.Make(w, app);
+	app.Init()
 }
 
 func main() {

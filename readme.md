@@ -3,13 +3,18 @@
 This project is under development
 ```
 go get github.com/hasangenc0/microfrontends
-
 ```
 
 ## Usage
 Look at the [examples](./examples) folder
 
-Define your microservice gateways
+##### Running Examples
+```
+cd examples
+sh run.sh
+```
+
+##### Define your microservice gateways
 ```go
 gateways := []microfrontends.Gateway{
     {
@@ -33,7 +38,7 @@ gateways := []microfrontends.Gateway{
 }
 ```
 
-Define your default page
+##### Define your default page
 ```go
 page := microfrontends.Page{
     Name: "App",
@@ -49,14 +54,15 @@ page := microfrontends.Page{
 }
 ```
 
-Create microfrontends app and run it
+##### Create microfrontends app and run it
 ```go
 app := microfrontends.App{
     gateways,
     page,
+    w,
 }
 
-microfrontends.Make(w, app);
+app.Init()
 ```
 
 ## Author
