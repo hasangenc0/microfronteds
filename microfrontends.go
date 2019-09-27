@@ -20,38 +20,6 @@ type App struct {
 	Response http.ResponseWriter
 }
 
-const (
-	MethodGet     = "GET"
-	MethodHead    = "HEAD"
-	MethodPost    = "POST"
-	MethodPut     = "PUT"
-	MethodPatch   = "PATCH"
-	MethodDelete  = "DELETE"
-	MethodConnect = "CONNECT"
-	MethodOptions = "OPTIONS"
-	MethodTrace   = "TRACE"
-)
-
-func getMethod(method string) string {
-	switch method {
-	case MethodGet: return MethodGet
-	case MethodHead: return MethodHead
-	case MethodPost: return MethodPost
-	case MethodPut: return MethodPut
-	case MethodPatch: return MethodPatch
-	case MethodDelete: return MethodDelete
-	case MethodConnect: return MethodConnect
-	case MethodOptions: return MethodOptions
-	case MethodTrace: return MethodTrace
-	default:
-		panic(method + " is not a type of http method.")
-	}
-}
-
-func getUrl(host string, port string) string {
-	return host + ":" + port
-}
-
 func (app App) setHeaders() {
 	app.Response.Header().Set("Transfer-Encoding", "chunked")
 	//w.Header().Set("X-Content-Type-Options", "nosniff")
@@ -87,7 +55,7 @@ func (app App) sendChunk(gateway Gateway, wg *sync.WaitGroup, ch chan http.Flush
 	}
 
 	_client := &http.Client{}
-	req, err := http.NewRequest(getMethod(gateway.Method), getUrl(gateway.Host, gateway.Port), nil)
+	req, err := http.NewRequest(gateway.GetHTTPMethod(), gateway.GetUrl(), nil)
 	if err != nil {
 		panic(err)
 	}
