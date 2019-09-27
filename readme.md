@@ -33,7 +33,7 @@ gateways := []microfrontends.Gateway{
         Name: "content",
         Host: "http://localhost",
         Port: "4461",
-        Method: "GET",
+        Method: "POST",
     },
 }
 ```

@@ -26,7 +26,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			Name: "content",
 			Host: "http://localhost",
 			Port: "4461",
-			Method: "GET",
+			Method: "POST",
 		},
 	}
 
