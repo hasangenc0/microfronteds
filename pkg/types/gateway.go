@@ -1,7 +1,5 @@
 package types
 
-type HTTPMethod string
-
 type Gateway struct {
 	Name string
 	Host string
@@ -9,20 +7,8 @@ type Gateway struct {
 	Method string
 }
 
-const (
-	MethodGet     = "GET"
-	MethodHead    = "HEAD"
-	MethodPost    = "POST"
-	MethodPut     = "PUT"
-	MethodPatch   = "PATCH"
-	MethodDelete  = "DELETE"
-	MethodConnect = "CONNECT"
-	MethodOptions = "OPTIONS"
-	MethodTrace   = "TRACE"
-)
-
-func (gateway *Gateway) GetHTTPMethod() string {
-	switch gateway.Method{
+func (gateway Gateway) GetHTTPMethod() string{
+	switch gateway.Method {
 	case MethodGet: return MethodGet
 	case MethodHead: return MethodHead
 	case MethodPost: return MethodPost
@@ -37,7 +23,6 @@ func (gateway *Gateway) GetHTTPMethod() string {
 	}
 }
 
-type Page struct {
-	Content string
-	Name string
+func (gateway Gateway) GetUrl() string {
+	return gateway.Host + ":" + gateway.Port
 }

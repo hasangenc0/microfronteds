@@ -18,13 +18,8 @@ type App struct {
 	Response http.ResponseWriter
 }
 
-func getUrl(host string, port string) string {
-	return host + ":" + port
-}
-
 func (app *App) setHeaders() {
 	app.Response.Header().Set("Transfer-Encoding", "chunked")
-	//w.Header().Set("X-Content-Type-Options", "nosniff")
 }
 
 func (app *App) initialize() {
@@ -57,7 +52,7 @@ func (app *App) sendChunk(gateway Gateway, ch chan http.Flusher) {
 	}
 
 	_client := &http.Client{}
-	req, err := http.NewRequest(gateway.GetHTTPMethod(), getUrl(gateway.Host, gateway.Port), nil)
+	req, err := http.NewRequest(gateway.GetHTTPMethod(), gateway.GetUrl(), nil)
 	if err != nil {
 		panic(err)
 	}
