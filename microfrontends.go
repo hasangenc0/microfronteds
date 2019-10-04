@@ -7,8 +7,6 @@ import (
 	"html/template"
 	"io/ioutil"
 	"net/http"
-	"runtime"
-	"sync"
 )
 
 type Gateway = types.Gateway
@@ -20,44 +18,16 @@ type App struct {
 	Response http.ResponseWriter
 }
 
-const (
-	MethodGet     = "GET"
-	MethodHead    = "HEAD"
-	MethodPost    = "POST"
-	MethodPut     = "PUT"
-	MethodPatch   = "PATCH"
-	MethodDelete  = "DELETE"
-	MethodConnect = "CONNECT"
-	MethodOptions = "OPTIONS"
-	MethodTrace   = "TRACE"
-)
-
-func getMethod(method string) string {
-	switch method {
-	case MethodGet: return MethodGet
-	case MethodHead: return MethodHead
-	case MethodPost: return MethodPost
-	case MethodPut: return MethodPut
-	case MethodPatch: return MethodPatch
-	case MethodDelete: return MethodDelete
-	case MethodConnect: return MethodConnect
-	case MethodOptions: return MethodOptions
-	case MethodTrace: return MethodTrace
-	default:
-		panic(method + " is not a type of http method.")
-	}
-}
-
 func getUrl(host string, port string) string {
 	return host + ":" + port
 }
 
-func (app App) setHeaders() {
+func (app *App) setHeaders() {
 	app.Response.Header().Set("Transfer-Encoding", "chunked")
 	//w.Header().Set("X-Content-Type-Options", "nosniff")
 }
 
-func (app App) initialize() {
+func (app *App) initialize() {
 	flusher, ok := app.Response.(http.Flusher)
 
 	if !ok {
@@ -80,21 +50,20 @@ func (app App) initialize() {
 	flusher.Flush()
 }
 
-func (app App) sendChunk(gateway Gateway, wg *sync.WaitGroup, ch chan http.Flusher) {
+func (app *App) sendChunk(gateway Gateway, ch chan http.Flusher) {
 	var flusher, ok = app.Response.(http.Flusher)
 	if !ok {
 		panic("expected http.ResponseWriter to be an http.Flusher")
 	}
 
 	_client := &http.Client{}
-	req, err := http.NewRequest(getMethod(gateway.Method), getUrl(gateway.Host, gateway.Port), nil)
+	req, err := http.NewRequest(gateway.GetHTTPMethod(), getUrl(gateway.Host, gateway.Port), nil)
 	if err != nil {
 		panic(err)
 	}
 	resp, err := _client.Do(req)
 	if err != nil {
 		ch <- nil
-		wg.Done()
 		return
 	}
 	defer resp.Body.Close()
@@ -113,10 +82,9 @@ func (app App) sendChunk(gateway Gateway, wg *sync.WaitGroup, ch chan http.Flush
 	}
 
 	ch <- flusher
-	wg.Done()
 }
 
-func (app App) finish() {
+func (app *App) finish() {
 	flusher, ok := app.Response.(http.Flusher)
 
 	if !ok {
@@ -134,20 +102,15 @@ func (app App) finish() {
 
 }
 
-func (app App) Init() {
+func (app *App) Init() {
 	app.setHeaders()
 
-	var wg sync.WaitGroup
-
 	app.initialize()
-
-	runtime.GOMAXPROCS(4)
 
 	var flusher = make(chan http.Flusher)
 
 	for _, gateway := range app.Gateway {
-		wg.Add(1)
-		go app.sendChunk(gateway, &wg, flusher)
+		go app.sendChunk(gateway, flusher)
 	}
 
 	for range app.Gateway {
@@ -159,8 +122,6 @@ func (app App) Init() {
 			flusher.Flush()
 		}
 	}
-
-	wg.Wait()
 
 	app.finish()
 }
