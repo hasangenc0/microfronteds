@@ -2,19 +2,20 @@ package microfrontends
 
 import (
 	"fmt"
-	"github.com/hasangenc0/microfrontends/pkg/client"
-	"github.com/hasangenc0/microfrontends/pkg/types"
 	"html/template"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/hasangenc0/microfrontends/pkg/client"
+	"github.com/hasangenc0/microfrontends/pkg/types"
 )
 
 type Gateway = types.Gateway
 type Page = types.Page
 
 type App struct {
-	Gateway []Gateway
-	Page Page
+	Gateway  []Gateway
+	Page     Page
 	Response http.ResponseWriter
 }
 
@@ -33,7 +34,6 @@ func (app *App) initialize() {
 
 	if err != nil {
 		panic("An Error occured when parsing html")
-		return
 	}
 
 	err = tmpl.Execute(app.Response, "")

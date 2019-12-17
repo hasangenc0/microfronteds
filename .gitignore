@@ -38,6 +38,3 @@
 
 # GoLand Ide
 .idea/
-
-# env
-.env
